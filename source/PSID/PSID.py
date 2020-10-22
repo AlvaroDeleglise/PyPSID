@@ -1,8 +1,13 @@
-""" Omid Sani, Shanechi Lab, University of Southern California, 2020 """
-"Example for using the PSID algorithm"
+""" 
+Copyright (c) 2020 University of Southern California
+See full notice in LICENSE.md
+Omid G. Sani and Maryam M. Shanechi
+Shanechi Lab, University of Southern California
+"""
 
 import numpy as np
 from scipy import linalg
+
 from . import LSSM
 
 def projOrth(A, B):
@@ -13,14 +18,25 @@ def projOrth(A, B):
     2) W: The matrix that gives AHat when it is right multiplied by B
     """
     if B is not None:
-        W = A @ B.T @ np.linalg.pinv(B @ B.T) # or: A / B = A * B.' * pinv(B * B.')
+        BCov = B @ B.T / B.shape[0]  # Division by num samples eventually cancels out but it makes the computations (specially pinv) numerically more stable
+        ABCrossCov = A @ B.T / B.shape[0]
+        isOk, attempts = False, 0
+        while not isOk and attempts < 10:
+            try:
+                attempts += 1
+                W = ABCrossCov @ np.linalg.pinv(BCov) # or: A / B = A * B.' * pinv(B * B.')
+                isOk = True
+            except Exception as e:
+                print('Error: "{}". Will retry...'.format(e))
+        if not isOk:
+            raise(Exception(e))
         AHat = W @ B  # or: A * B.' * pinv(B * B.') * B
     else:
         W = np.zeros( (A.shape[0], B.shape[1]) )
         AHat = np.zeros( A.shape )
     return (AHat, W)
 
-def blkhankskip(Y, i, j = None, s = 0):
+def blkhankskip(Y, i, j=None, s=0):
     ny, N = Y.shape[0], Y.shape[1]
     if j == None: 
         j = N - i + 1
@@ -29,7 +45,7 @@ def blkhankskip(Y, i, j = None, s = 0):
         H[slice(r*ny, r*ny + ny), :] = Y[:, slice(s+r, s+r+j)]
     return H
 
-def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
+def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), return_WS=False, fitCzViaKF=True):
     """
     PSID PSID: Preferential Subspace Identification Algorithm
     Identifies a linear stochastic model for a signal y, while prioritizing
@@ -73,7 +89,8 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
                 same data. If calling PSID repeatedly with the same data 
                 and horizon, several computationally costly steps can be 
                 reused from before. Otherwise will be discarded.
-        - (7) fitCzViaKF (default: True): if true (preferred option), 
+        - (7) return_WS (default: False): if true, will return WS as the second output
+        - (8) fitCzViaKF (default: True): if true (preferred option), 
                 refits Cz more accurately using a KF after all other 
                 paramters are learned
     Outputs:
@@ -87,7 +104,7 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
                 on the same data (see input (6) for more details)
     Usage example:
         idSys = PSID(Y, Z, nx, n1, i);
-        [idSys, WS] = PSID(Y, Z, nx, n1, i, WS);
+        [idSys, WS] = PSID(Y, Z, nx, n1, i, WS, return_WS=True);
         idSysSID = PSID(Y, Z, nx, 0, i); % Set n1=0 for SID
     """
     ny, Ndat = Y.shape[0], Y.shape[1]
@@ -97,7 +114,8 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
     else:
         nz = 0
 
-    if 'N' in WS and WS['N'] == N and 'i' in WS and WS['i'] == i and \
+    if 'N' in WS and WS['N'] == N and \
+        'i' in WS and WS['i'] == i and \
         'YShape' in WS and WS['YShape'] == Y.shape and \
         'ZShape' in WS and WS['ZShape'] == Z.shape and \
         'Y1' in WS and WS['Y1'] == Y[0,0] and \
@@ -122,10 +140,12 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
             WS['Zii'] = blkhankskip(Z, 1, N, i)
     
     if n1 > nx:
-        n1 = nx  # Max possible n1 value
+        n1 = nx  # n1 can at most be nx
 
     # Stage 1
     if n1 > 0 and nz > 0:
+        if n1 > i*nz:
+            raise(Exception('n1 (currently {}) must be at most i*nz={}*{}={}. Use a larger horizon i.'.format(n1,i,nz,i*nz)))
         if 'ZHat_U' not in WS or WS['ZHat_U'] is None:
             Zf = blkhankskip(Z, i, N, i)
             WS['ZHat'] = projOrth(Zf, WS['Yp'])[0] # Zf @ WS['Yp'].T @ np.linalg.pinv(WS['Yp'] @ WS['Yp'].T) @ WS['Yp']  # Eq. (10)
@@ -152,6 +172,8 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
     # Stage 2
     n2 = nx - n1     
     if n2 > 0:
+        if nx > i*ny:
+            raise(Exception('nx (currently {}) must be at most i*ny={}*{}={}. Use a larger horizon i.'.format(nx,i,ny,i*ny)))
         if 'YHat_U' not in WS or WS['YHat_U'] is None or \
             'n1' not in WS or WS['n1'] != n1:
             WS['n1'] = n1
@@ -177,11 +199,11 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
         S2 = np.diag(WS['YHat_S'][:n2])              # Eq. (24)
         U2 = WS['YHat_U'][:  , :n2]                  # Eq. (24)
     
-        Oy = U2 @ S2**(1/2)                          # Eq. (25) - VODM Book p86, Step 4
-        Oy_Minus = Oy[:-ny, :]                       # Eq. (27) - VODM Book p86, Step 4
+        Oy = U2 @ S2**(1/2)                          # Eq. (25)
+        Oy_Minus = Oy[:-ny, :]                       # Eq. (27)
 
-        Xk2 = np.linalg.pinv(Oy) @ WS['YHat'];                    # Eq. (26) - VODM Book p86, Step 5
-        Xk2_Plus1 = np.linalg.pinv(Oy_Minus) @ WS['YHatMinus'];   # Eq. (28) - VODM Book p86, Step 5
+        Xk2 = np.linalg.pinv(Oy) @ WS['YHat'];                    # Eq. (26)
+        Xk2_Plus1 = np.linalg.pinv(Oy_Minus) @ WS['YHatMinus'];   # Eq. (28)
 
         Xk = np.concatenate((Xk, Xk2))                            # Eq. (29)
         Xk_Plus1 = np.concatenate((Xk_Plus1, Xk2_Plus1))          # Eq. (29)
@@ -209,7 +231,7 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
     else:
         Cz = np.empty([0, nx])
 
-    Cy = projOrth(WS['Yii'], Xk)[1] # WS['Yii'] @ Xk.T @ np.linalg.pinv(Xk @ Xk.T)    # Eq. (32) - VODM Book p86, Step 6
+    Cy = projOrth(WS['Yii'], Xk)[1] # WS['Yii'] @ Xk.T @ np.linalg.pinv(Xk @ Xk.T)    # Eq. (32)
     v  = WS['Yii'] - Cy @ Xk                             # Eq. (34)
 
     # Compute noise covariances
@@ -232,4 +254,7 @@ def PSID(Y, Z=None, nx=None, n1=0, i=None, WS=dict(), fitCzViaKF=True):
         Cz = projOrth(Z, xHat.T)[1]
     s.Cz = Cz
     
-    return s
+    if not return_WS:
+        return s
+    else:
+        return s, WS

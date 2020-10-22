@@ -1,25 +1,31 @@
-""" Omid Sani, Shanechi Lab, University of Southern California, 2020 """
-"Example for using the PSID algorithm"
+""" 
+Copyright (c) 2020 University of Southern California
+See full notice in LICENSE.md
+Omid G. Sani and Maryam M. Shanechi
+Shanechi Lab, University of Southern California
+
+Example for using the PSID algorithm
+"""
 
 import argparse, io, os, copy
 
 import numpy as np
 import matplotlib.pyplot as plt
-from  matplotlib import patches
+from matplotlib import patches
 
-from MatHelper import MatHelper as mh
 from PSID import PSID as LinPSID
 from PSID.evaluation import evalPrediction
 from PSID.LSSM import LSSM
+from PSID.MatHelper import loadmat
 
 def main():
-    parser = argparse.ArgumentParser(description='Run CVed model fitting for NHP data')
+    parser = argparse.ArgumentParser(description='Run PSID on an example simulated dataset')
     parser.add_argument('--datafile', type=str, default='./source/example/sample_data.mat', help='Data file')
     
     args = parser.parse_args()
 
     # Load data                    
-    data = mh.loadmat(args.datafile)
+    data = loadmat(args.datafile)
     # This data is generated from a system (shown in Supplementary Fig. 2) with 
     # (a) 2 behaviorally relevant latent states, 
     # (b) 2 behaviorally irrelevant latent states, and 
