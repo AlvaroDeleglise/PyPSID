@@ -32,3 +32,9 @@ Output:
 Example simulated data and the code for running PSID on the data is provided in 
 [source/PSID_example.py](source/PSID_example.py)
 This script perform PSID model identification and visualizes the learned eigenvalues similar to in Supplementary Fig 1.
+
+# Licence
+Copyright (c) 2020 University of Southern California  
+See full notice in [LICENSE.md](LICENSE.md)  
+Omid G. Sani and Maryam M. Shanechi  
+Shanechi Lab, University of Southern California
