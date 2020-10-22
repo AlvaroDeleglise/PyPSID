@@ -31,7 +31,7 @@ Output:
 ## Extracting latent states using learned model
 Once a model is learned using PSID, you can apply the model to new data (i.e. run the associated Kalman filter) as follows:
 ```
-zPred, yPred1, xPred = idSys.predict(y)
+zPred, yPred, xPred = idSys.predict(y)
 ```
 Input:
 - y: neural activity time series (time x dimension)
