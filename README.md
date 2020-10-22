@@ -11,14 +11,13 @@ Omid G. Sani, Bijan Pesaran, Maryam M. Shanechi  (2019). *Modeling behaviorally 
 ## Initialization
 Import the PSID module.
 ```
-
+import PSID
 ```
 
 ## Main learning function
 The main function for the Python implementation is ./source/PSID/PSID.py -> function PSID. A complete usage guide is available in the function. The following shows an example case:
 ```
-from PSID import PSID as LinPSID
-idSys = PSID(y, z, nx, n1, i);
+idSys = PSID.PSID(y, z, nx, n1, i);
 ```
 Inputs:
 - y and z are time x dimension matrices with neural (e.g. LFP signal powers or spike counts) and behavioral data (e.g. joint angles, hand position, etc), respectively. 
@@ -32,4 +31,4 @@ Output:
 # Example script
 Example simulated data and the code for running PSID on the data is provided in 
 [source/PSID_example.py](source/PSID_example.py)
-This script perform PSID model identification and visualizes the learned eigenvalues similar to in Supplementary Fig 2.
+This script perform PSID model identification and visualizes the learned eigenvalues similar to in Supplementary Fig 1.

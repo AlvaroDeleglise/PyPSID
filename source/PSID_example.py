@@ -13,9 +13,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 
-from PSID import PSID as LinPSID
+import PSID
 from PSID.evaluation import evalPrediction
-from PSID.LSSM import LSSM
 from PSID.MatHelper import loadmat
 
 def main():
@@ -41,7 +40,7 @@ def main():
 
     ## (Example 1) PSID can be used to dissociate and extract only the 
     # behaviorally relevant latent states (with nx = n1 = 2)
-    idSys1 = LinPSID.PSID(yTrain.T, zTrain.T, nx=2, n1=2, i=10)
+    idSys1 = PSID.PSID(yTrain.T, zTrain.T, nx=2, n1=2, i=10)
 
     # Predict behavior using the learned model
     zTestPred1, yTestPred1, xTestPred1 = idSys1.predict(yTest)
@@ -51,7 +50,7 @@ def main():
     CC = evalPrediction(zTest, zTestPred1, 'CC')
 
     # Predict behavior using the true model for comparison
-    trueSys = LSSM(params=data['trueSys'])
+    trueSys = PSID.LSSM(params=data['trueSys'])
     if not hasattr(trueSys, 'Cz'):
       trueSys.Cz = trueSys.T[1:, :].T
     zTestPredIdeal, yTestPredIdeal, xTestPredIdeal = trueSys.predict(yTest)
@@ -61,7 +60,7 @@ def main():
     
     ## (Example 2) Optionally, PSID can additionally also learn the 
     # behaviorally irrelevant latent states (with nx = 4, n1 = 2)
-    idSys2 = LinPSID.PSID(yTrain.T, zTrain.T, nx=4, n1=2, i=10)
+    idSys2 = PSID.PSID(yTrain.T, zTrain.T, nx=4, n1=2, i=10)
 
     # Plot the true and identified eigenvalues    
 
