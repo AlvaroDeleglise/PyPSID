@@ -1,4 +1,5 @@
-# PSID: Preferential subspace identification [Python implementation]
+# PSID: Preferential subspace identification
+# [Python implementation]
 
 For MATLAB implementation see [http://github.com/ShanechiLab/PSID](github.com/ShanechiLab/PSID)
 
